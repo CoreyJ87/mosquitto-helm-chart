@@ -15,6 +15,29 @@ spec:
       labels:
         {{- include "mosquitto.selectorLabels" . | nindent 8 }}
     spec:
+      {{- if .Values.auth.enabled }}
+      initContainers:
+        - name: setup-auth
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              {{- if .Values.auth.users }}
+              touch /mosquitto/config/passwords
+              {{- range .Values.auth.users }}
+              mosquitto_passwd -b /mosquitto/config/passwords {{ .username }} {{ .password }}
+              {{- end }}
+              chown 1883:1883 /mosquitto/config/passwords
+              chmod 600 /mosquitto/config/passwords
+              {{- else }}
+              echo "No users defined for authentication"
+              exit 1
+              {{- end }}
+          volumeMounts:
+            - name: auth-config
+              mountPath: /mosquitto/config
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -38,6 +61,11 @@ spec:
             - name: config
               mountPath: /mosquitto/config/mosquitto.conf
               subPath: mosquitto.conf
+            {{- if .Values.auth.enabled }}
+            - name: auth-config
+              mountPath: /mosquitto/config/passwords
+              subPath: passwords
+            {{- end }}
             {{- if .Values.persistence.enabled }}
             - name: data
               mountPath: /mosquitto/data
@@ -48,6 +76,10 @@ spec:
         - name: config
           configMap:
             name: {{ include "mosquitto.fullname" . }}-config
+        {{- if .Values.auth.enabled }}
+        - name: auth-config
+          emptyDir: {}
+        {{- end }}
         {{- if .Values.persistence.enabled }}
         - name: data
           persistentVolumeClaim:

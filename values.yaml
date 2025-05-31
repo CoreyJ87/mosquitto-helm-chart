@@ -28,6 +28,12 @@ persistence:
 auth:
   enabled: false  # Set to true to enable password authentication
   # When enabled, you'll need to create users manually or use init containers
+  users: []
+    # Example:
+    # - username: admin
+    #   password: admin123
+    # - username: user
+    #   password: user123
 
 config:
   mosquitto.conf: |
