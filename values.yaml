@@ -46,12 +46,7 @@ config:
     log_timestamp true
     
     # Authentication
-    {{- if .Values.auth.enabled }}
-    allow_anonymous false
-    password_file /mosquitto/config/passwords
-    {{- else }}
     allow_anonymous true
-    {{- end }}
     
     # Default MQTT port
     listener 1883

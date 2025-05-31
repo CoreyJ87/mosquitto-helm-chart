@@ -5,7 +5,38 @@ metadata:
   labels:
     {{- include "mosquitto.labels" . | nindent 4 }}
 data:
-  {{- range $key, $value := .Values.config }}
-  {{ $key }}: |
-{{ $value | indent 4 }}
-  {{- end }} 
+  mosquitto.conf: |
+    # Persistence
+    persistence true
+    persistence_location /mosquitto/data/
+    
+    # Logging
+    log_dest file /mosquitto/log/mosquitto.log
+    log_dest stdout
+    log_type error
+    log_type warning
+    log_type notice
+    log_type information
+    connection_messages true
+    log_timestamp true
+    
+    # Authentication
+    {{- if .Values.auth.enabled }}
+    allow_anonymous false
+    password_file /mosquitto/config/passwords
+    {{- else }}
+    allow_anonymous true
+    {{- end }}
+    
+    # Default MQTT port
+    listener 1883
+    protocol mqtt
+    
+    # WebSocket support
+    listener 9001
+    protocol websockets
+    
+    # MQTT over TLS/SSL (when certificates are available)
+    listener 8883
+    protocol mqtt
+    cafile /etc/ssl/certs/ca-certificates.crt 
